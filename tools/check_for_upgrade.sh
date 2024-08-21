@@ -41,7 +41,7 @@ function current_epoch() {
 
 function is_update_available() {
   local branch
-  branch=${"$(builtin cd -q "$ZSH"; git config --local oh-my-zsh.branch)":-master}
+  branch=${"$(builtin cd -q "$ZSH"; git config --local oh-my-zsh.branch)":-main}
 
   local remote remote_url remote_repo
   remote=${"$(builtin cd -q "$ZSH"; git config --local oh-my-zsh.remote)":-origin}
@@ -58,7 +58,7 @@ function is_update_available() {
   esac
 
   # If the remote repo is not the official one, let's assume there are updates available
-  [[ "$repo" = ohmyzsh/ohmyzsh ]] || return 0
+  [[ "$repo" = zkninja/ohmyzsh ]] || return 0
   local api_url="https://api.github.com/repos/${repo}/commits/${branch}"
 
   # Get local HEAD. If this fails assume there are updates
