@@ -27,7 +27,7 @@ zstyle -s ':omz:update' mode update_mode || {
 # - $ZSH is not a git repository
 if [[ "$update_mode" = disabled ]] \
    || [[ ! -w "$ZSH" || ! -O "$ZSH" ]] \
-   || [[ ! -t 1 ]] \
+   || [[ ! -t 1 && ${POWERLEVEL9K_INSTANT_PROMPT:-off} == off ]] \
    || ! command git --version 2>&1 >/dev/null \
    || (builtin cd -q "$ZSH"; ! command git rev-parse --is-inside-work-tree &>/dev/null); then
   unset update_mode
@@ -41,7 +41,7 @@ function current_epoch() {
 
 function is_update_available() {
   local branch
-  branch=${"$(builtin cd -q "$ZSH"; git config --local oh-my-zsh.branch)":-main}
+  branch=${"$(builtin cd -q "$ZSH"; git config --local oh-my-zsh.branch)":-master}
 
   local remote remote_url remote_repo
   remote=${"$(builtin cd -q "$ZSH"; git config --local oh-my-zsh.remote)":-origin}
@@ -58,7 +58,7 @@ function is_update_available() {
   esac
 
   # If the remote repo is not the official one, let's assume there are updates available
-  [[ "$repo" = zkninja/ohmyzsh ]] || return 0
+  [[ "$repo" = ohmyzsh/ohmyzsh ]] || return 0
   local api_url="https://api.github.com/repos/${repo}/commits/${branch}"
 
   # Get local HEAD. If this fails assume there are updates
@@ -111,6 +111,11 @@ EOD
 function update_ohmyzsh() {
   local verbose_mode
   zstyle -s ':omz:update' verbose verbose_mode || verbose_mode=default
+
+  # Force verbose mode to silent if p10k instant prompt is enabled
+  if [[ ${POWERLEVEL9K_INSTANT_PROMPT:-off} != "off" ]]; then
+    verbose_mode=silent
+  fi
 
   if [[ "$update_mode" != background-alpha ]] \
     && LANG= ZSH="$ZSH" zsh -f "$ZSH/tools/upgrade.sh" -i -v $verbose_mode; then
@@ -227,7 +232,7 @@ function handle_update() {
 
     # Ask for confirmation and only update on 'y', 'Y' or Enter
     # Otherwise just show a reminder for how to update
-    echo -n "[oh-my-zsh] Would you like to update? [Y/n] "
+    printf "[oh-my-zsh] Would you like to update? [Y/n] "
     read -r -k 1 option
     [[ "$option" = $'\n' ]] || echo
     case "$option" in
@@ -275,7 +280,7 @@ case "$update_mode" in
           return 0
         elif [[ "$EXIT_STATUS" -ne 0 ]]; then
           print -P "\n%F{red}[oh-my-zsh] There was an error updating:%f"
-          printf "\n${fg[yellow]}%s${reset_color}" "$ERROR"
+          printf "\n${fg[yellow]}%s${reset_color}" "${ERROR}"
           return 0
         fi
       } always {
